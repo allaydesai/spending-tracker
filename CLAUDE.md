@@ -1,0 +1,2 @@
+- use context7 mcp when you need to review library doucmentation
+- use playwright mcp when testing the application
