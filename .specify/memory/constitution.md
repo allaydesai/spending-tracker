@@ -1,50 +1,94 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version change: Initial → 1.0.0
+Added sections:
+- 5 core principles focused on code quality, testing, UX, mobile, and performance
+- Performance Standards section
+- Development Workflow section
+- Updated governance rules
+
+Templates requiring updates:
+✅ Updated constitution.md
+⚠ Need to validate template consistency
+
+Follow-up TODOs: None
+-->
+
+# Spending Tracker Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Code Quality First
+Code MUST be maintainable, readable, and follow established patterns. All code changes require proper formatting using automated tools (ESLint, Prettier). Type safety is mandatory where applicable (TypeScript). Code reviews are required for all changes. Documentation MUST be updated when interfaces change.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+*Rationale: Personal projects benefit from professional standards to ensure long-term maintainability and learning value.*
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Test-Driven Development (NON-NEGOTIABLE)
+Tests MUST be written before implementation. All features require unit tests with minimum 80% coverage. Integration tests MUST cover user workflows. Contract tests MUST validate data interfaces. Tests MUST pass before merging any code.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+*Rationale: Financial data requires reliability. TDD ensures robust implementation and prevents regression bugs that could corrupt spending data.*
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. User Experience Consistency
+Interface design MUST follow consistent patterns across all screens. User interactions MUST provide immediate feedback. Error messages MUST be clear and actionable. Navigation MUST be intuitive and predictable. Visual hierarchy MUST guide users toward primary actions.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+*Rationale: Personal finance tools require trust through professional, consistent interfaces that reduce cognitive load.*
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Mobile-First Design
+All interfaces MUST be responsive and touch-friendly. Performance on mobile devices MUST not degrade. Touch targets MUST meet accessibility guidelines (44px minimum). Content MUST be readable without zooming. Offline functionality MUST be supported where possible.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+*Rationale: Expense tracking happens on-the-go. Mobile usability is essential for real-world adoption and regular use.*
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Performance Excellence
+Page load times MUST be under 2 seconds on standard connections. Data processing MUST handle files up to 10MB. Memory usage MUST remain under 512MB during normal operation. Bundle sizes MUST be optimized and measured. Performance regressions MUST be detected and addressed.
+
+*Rationale: Slow financial tools discourage regular use. Performance directly impacts user adoption and data entry consistency.*
+
+## Performance Standards
+
+**Response Time Requirements:**
+- Dashboard load: <2 seconds
+- Data import: <5 seconds for typical Excel files
+- Chart rendering: <1 second
+- Search/filter operations: <500ms
+
+**Resource Constraints:**
+- Memory usage: <512MB peak
+- Bundle size: <2MB compressed
+- Database queries: <100ms p95
+- File processing: Support up to 10MB Excel files
+
+**Scalability Targets:**
+- Support 5+ years of transaction data
+- Handle 10,000+ transactions efficiently
+- Maintain performance with multiple Excel files
+
+## Development Workflow
+
+**Code Review Process:**
+- All changes require pull request review
+- Automated testing must pass before review
+- Performance impact must be assessed
+- Security implications must be considered
+
+**Quality Gates:**
+- Linting and formatting checks (automated)
+- Type checking (where applicable)
+- Test coverage minimum 80%
+- Performance benchmarks must pass
+- Accessibility standards compliance
+
+**Deployment Standards:**
+- Staging environment testing required
+- Data backup before schema changes
+- Rollback plan for breaking changes
+- User data migration validation
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other development practices. Changes to core principles require documentation of rationale and impact assessment. All pull requests must verify compliance with constitutional principles. Complexity deviations must be explicitly justified in code reviews.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Performance regressions violating established standards require immediate attention. Security issues take precedence over feature development. User data integrity is non-negotiable.
+
+Runtime development guidance is maintained in project documentation and agent-specific files.
+
+**Version**: 1.0.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22

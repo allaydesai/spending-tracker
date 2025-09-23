@@ -1,0 +1,15 @@
+date,amount,category,description,merchant,account,is_transfer
+2025-09-01,-1850.00,Housing,"Rent - September",Landlord Co,RBC Chequing,false
+2025-09-03,-72.43,Groceries,"Walmart Supercentre #1234",Walmart,RBC Visa,false
+2025-09-04,2500.00,Salary,"Payroll Sep",Employer Inc,RBC Chequing,false
+2025-09-05,-45.99,Dining,"Coffee Shop",Local Cafe,RBC Visa,false
+2025-09-07,-500.00,Transfers,"Credit Card Payment",RBC Visa Payment,RBC Chequing,true
+2025-09-08,-120.00,Utilities,"Electricity Bill",Hydro One,RBC Chequing,false
+2025-09-10,-89.50,Groceries,"Metro Grocery Store",Metro,RBC Visa,false
+2025-09-15,-25.00,Transportation,"Bus Pass",Transit Authority,RBC Chequing,false
+2025-09-18,-67.89,Dining,"Restaurant Bill",Italian Bistro,RBC Visa,false
+2025-09-20,-15.99,Entertainment,"Netflix Subscription",Netflix,RBC Visa,false
+2025-09-22,-34.50,Health,"Pharmacy",Shoppers Drug Mart,RBC Visa,false
+2025-09-25,-156.78,Clothing,"Department Store",The Bay,RBC Visa,false
+2025-09-28,-89.99,Electronics,"Online Purchase",Amazon,RBC Visa,false
+2025-09-30,-12.50,Miscellaneous,"Coffee",Starbucks,RBC Visa,false

@@ -49,6 +49,7 @@
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
+**Constitutional Requirement: Test-Driven Development (NON-NEGOTIABLE)**
 - [ ] T004 [P] Contract test POST /api/users in tests/contract/test_users_post.py
 - [ ] T005 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
 - [ ] T006 [P] Integration test user registration in tests/integration/test_registration.py
@@ -70,11 +71,13 @@
 - [ ] T018 CORS and security headers
 
 ## Phase 3.5: Polish
-- [ ] T019 [P] Unit tests for validation in tests/unit/test_validation.py
-- [ ] T020 Performance tests (<200ms)
-- [ ] T021 [P] Update docs/api.md
-- [ ] T022 Remove duplication
-- [ ] T023 Run manual-testing.md
+- [ ] T019 [P] Unit tests for validation in tests/unit/test_validation.py (Coverage ≥80%)
+- [ ] T020 Performance tests (Dashboard <2s, Import <5s, Charts <1s)
+- [ ] T021 [P] Mobile responsiveness validation (Touch targets ≥44px)
+- [ ] T022 [P] Accessibility compliance check
+- [ ] T023 [P] Update docs/api.md
+- [ ] T024 Remove duplication and code quality review
+- [ ] T025 Run manual-testing.md
 
 ## Dependencies
 - Tests (T004-T007) before implementation (T008-T014)

@@ -1,8 +1,8 @@
 
-# Implementation Plan: [FEATURE]
+# Implementation Plan: CSV Transaction Dashboard
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-build-a-simple` | **Date**: 2025-09-22 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/001-build-a-simple/spec.md`
 
 ## Execution Flow (/plan command scope)
 ```
@@ -31,50 +31,50 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-[Extract from feature spec: primary requirement + technical approach from research]
+Local-first web application for CSV transaction dashboard analysis. Users upload a single CSV/Excel file containing pre-categorized transactions for one month to visualize spending patterns through KPIs (total spend, income, net) and interactive category charts (bar/pie). Features include drill-down transaction table with filtering/sorting capabilities, chart-to-table linking, and CSV/PDF export. Built with React/TypeScript for browser-only processing with 2-second load time target and mobile-first design.
 
 ## Technical Context
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript 5.0+, React 18+
+**Primary Dependencies**: React, Chart.js/Recharts, Papa Parse (CSV), SheetJS (Excel), jsPDF
+**Storage**: Browser localStorage (local-first, no server)
+**Testing**: Jest, React Testing Library, MSW (API mocking)
+**Target Platform**: Modern browsers (Chrome 90+, Firefox 88+, Safari 14+)
+**Project Type**: web - determines frontend structure
+**Performance Goals**: <2s dashboard load, <5s file import, 60fps chart interactions
+**Constraints**: <512MB memory usage, <2MB bundle size, offline-capable after initial load
+**Scale/Scope**: Single user, 10k+ transactions per file, 5+ years of data retention
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 **Code Quality Compliance:**
-- [ ] Code follows maintainable patterns and formatting standards
-- [ ] Type safety implemented where applicable
-- [ ] Documentation updated for interface changes
+- [x] Code follows maintainable patterns and formatting standards (TypeScript strict mode, ESLint, Prettier)
+- [x] Type safety implemented where applicable (TypeScript with strict config)
+- [x] Documentation updated for interface changes (TSDoc comments, README updates)
 
 **Testing Standards Compliance:**
-- [ ] TDD approach planned (tests before implementation)
-- [ ] Unit test coverage target ≥80% identified
-- [ ] Integration tests cover user workflows
-- [ ] Contract tests validate data interfaces
+- [x] TDD approach planned (tests before implementation, Jest + RTL)
+- [x] Unit test coverage target ≥80% identified (component and service layer coverage)
+- [x] Integration tests cover user workflows (file upload, filtering, export scenarios)
+- [x] Contract tests validate data interfaces (CSV parsing, data transformation validation)
 
 **User Experience Consistency:**
-- [ ] Interface patterns consistent across components
-- [ ] User feedback mechanisms planned
-- [ ] Error handling provides clear, actionable messages
-- [ ] Navigation follows intuitive patterns
+- [x] Interface patterns consistent across components (design system with reusable components)
+- [x] User feedback mechanisms planned (loading states, error messages, success notifications)
+- [x] Error handling provides clear, actionable messages (file format errors, validation feedback)
+- [x] Navigation follows intuitive patterns (single-page dashboard with clear visual hierarchy)
 
 **Mobile-First Design:**
-- [ ] Responsive design approach planned
-- [ ] Touch-friendly interface considerations
-- [ ] Accessibility guidelines compliance (44px touch targets)
-- [ ] Offline functionality planned where applicable
+- [x] Responsive design approach planned (CSS Grid/Flexbox, breakpoint strategy)
+- [x] Touch-friendly interface considerations (44px+ touch targets, gesture support)
+- [x] Accessibility guidelines compliance (WCAG 2.1 AA, semantic HTML, keyboard navigation)
+- [x] Offline functionality planned where applicable (localStorage persistence, service worker caching)
 
 **Performance Excellence:**
-- [ ] Load time targets defined (<2s dashboard, <5s import)
-- [ ] Resource constraints identified (<512MB memory, <2MB bundle)
-- [ ] Performance monitoring approach planned
-- [ ] Scalability targets addressed (5+ years data, 10k+ transactions)
+- [x] Load time targets defined (<2s dashboard load, <5s file import processing)
+- [x] Resource constraints identified (<512MB memory usage, <2MB bundle size)
+- [x] Performance monitoring approach planned (React DevTools Profiler, Web Vitals metrics)
+- [x] Scalability targets addressed (virtualized table for 10k+ transactions, efficient chart rendering)
 
 ## Project Structure
 
@@ -126,7 +126,7 @@ ios/ or android/
 └── [platform-specific structure]
 ```
 
-**Structure Decision**: [DEFAULT to Option 1 unless Technical Context indicates web/mobile app]
+**Structure Decision**: Option 1 (Single project) - Frontend-only web application with no backend required due to local-first architecture
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -188,17 +188,43 @@ ios/ or android/
 **Task Generation Strategy**:
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Contract tests for file-parser, data-processor, and export-service [P]
+- Data model implementations for Transaction, KPI, Filter entities [P]
+- Service layer implementations for parsing, processing, exporting
+- React component tasks for dashboard, charts, table, filters
+- Integration tests based on quickstart scenarios
+- Performance optimization and accessibility tasks
 
-**Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+**Ordering Strategy (TDD Approach)**:
+1. **Foundation Layer** [P]: TypeScript types, data models, utility functions
+2. **Service Layer Tests** [P]: Contract tests for all services (failing tests first)
+3. **Service Layer Implementation**: File parser → Data processor → Export service
+4. **Component Layer Tests** [P]: React component tests (RTL-based)
+5. **Component Layer Implementation**: UI components → Dashboard assembly
+6. **Integration Tests**: End-to-end user scenarios from quickstart.md
+7. **Performance & Polish**: Bundle optimization, accessibility, mobile testing
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Specific Task Categories**:
+- **Contract Tests (3 tasks)**: File parser, data processor, export service validation
+- **Type Definitions (2 tasks)**: Core types and interfaces, validation schemas
+- **Service Implementation (6 tasks)**: CSV/Excel parsing, KPI calculation, filtering, sorting, export functionality
+- **React Components (8 tasks)**: File upload, KPI display, charts, transaction table, filters, export buttons
+- **Integration (4 tasks)**: Main dashboard assembly, routing, state management, error handling
+- **Testing & QA (5 tasks)**: End-to-end scenarios, performance testing, accessibility audit, mobile testing
+- **Build & Deploy (2 tasks)**: Bundle optimization, production build configuration
+
+**Performance Considerations**:
+- Tasks 1-10: Can be executed in parallel (independent components)
+- Tasks 11-20: Sequential implementation following dependency order
+- Tasks 21-30: Integration and testing phases
+
+**Estimated Output**: 30 numbered, ordered tasks in tasks.md with clear dependencies and parallel execution markers
+
+**Testing Strategy per Task**:
+- Each service task includes both unit tests and contract validation
+- Each component task includes React Testing Library component tests
+- Integration tasks include full user workflow validation
+- Performance tasks include Web Vitals measurements and memory profiling
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -222,18 +248,18 @@ ios/ or android/
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [x] Phase 0: Research complete (/plan command)
+- [x] Phase 1: Design complete (/plan command)
+- [x] Phase 2: Task planning complete (/plan command - describe approach only)
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
-- [ ] Initial Constitution Check: PASS
-- [ ] Post-Design Constitution Check: PASS
-- [ ] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
+- [x] Initial Constitution Check: PASS
+- [x] Post-Design Constitution Check: PASS
+- [x] All NEEDS CLARIFICATION resolved
+- [ ] Complexity deviations documented (N/A - no violations)
 
 ---
 *Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
