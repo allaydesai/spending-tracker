@@ -1,6 +1,6 @@
 # CSV Transaction Dashboard
 
-A powerful, local-first web application for analyzing CSV transaction data with interactive dashboards, charts, and comprehensive filtering capabilities. Built with React, TypeScript, and modern web technologies.
+A powerful, local-first web application for analyzing CSV transaction data with interactive dashboards, charts, and comprehensive filtering capabilities. Built with Next.js, React, TypeScript, and modern web technologies.
 
 ## 🌟 Features
 
@@ -35,10 +35,22 @@ A powerful, local-first web application for analyzing CSV transaction data with 
    ```
 
 3. **Access Application**:
-   Open http://localhost:5173/ in your browser
+   Open http://localhost:3000/ in your browser
 
 4. **Upload Sample Data** (optional):
-   Use the provided sample file: `data/sample-transactions.csv`
+   Use the provided test files: `test-proper-format.csv` or `test-single-day.csv`
+
+## 💾 Data Persistence
+
+The application automatically saves your data and preferences locally:
+
+- **Transaction Data**: Uploaded data persists between browser sessions
+- **Filter Preferences**: Your selected filters are remembered
+- **No Manual Saving**: Everything saves automatically as you work
+- **Data Storage**: Uses browser localStorage (no external servers)
+- **Clear Data**: Use the "Clear Data" button to remove saved information
+
+When you reload the page, your previously uploaded transactions and applied filters will be restored automatically.
 
 ## 📋 CSV File Format
 
@@ -71,7 +83,7 @@ date,amount,category,description,merchant,account,is_transfer
 **Goal**: Upload transaction data and explore financial insights
 
 **Steps**:
-1. **Open Application** → Visit http://localhost:5173/
+1. **Open Application** → Visit http://localhost:3000/
 2. **Upload File** → Drag-and-drop your CSV file or click "Upload CSV"
 3. **View Dashboard** → Automatically displays:
    - **KPIs**: Total income, spending, net amount, transaction count
@@ -222,6 +234,8 @@ date,amount,category,description,merchant,account,is_transfer
 
 - **Local Processing**: All data stays in your browser
 - **No Server**: No data transmitted to external services
+- **Data Persistence**: Data saved locally using browser localStorage
+- **Filter Memory**: Your filters and preferences are remembered between sessions
 - **Offline Capable**: Works without internet after initial load
 - **No Tracking**: No analytics or user tracking
 
@@ -259,13 +273,13 @@ date,amount,category,description,merchant,account,is_transfer
 ## 🏗 Technical Details
 
 **Built With**:
-- React 18+ with TypeScript
-- Vite for fast builds
+- Next.js 14+ with React 18+ and TypeScript
 - Tailwind CSS for styling
+- Radix UI components for accessibility
 - Recharts for visualizations
-- Papa Parse for CSV processing
-- SheetJS for Excel files
-- jsPDF for report generation
+- SheetJS (XLSX) for CSV/Excel processing
+- Lucide React for icons
+- React Hook Form for form management
 
 **Performance Targets**:
 - Dashboard load: <2 seconds
