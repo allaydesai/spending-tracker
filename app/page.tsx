@@ -1,16 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { startOfDay, endOfDay } from "date-fns"
 import { FileUpload } from "@/components/file-upload"
 import { KPIDisplay } from "@/components/kpi-display"
 import { CategoryChart } from "@/components/category-chart"
 import { TransactionTable } from "@/components/transaction-table"
 import { FilterControls } from "@/components/filter-controls"
+import { SpendingCalendar } from "@/components/calendar/spending-calendar"
+import { CalendarErrorBoundary } from "@/components/calendar/calendar-error-boundary"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Download, Trash2, AlertCircle } from "lucide-react"
 import { DataProcessorService } from "@/lib/data-processor"
 import type { Transaction, KPI, CategorySummary, Filter } from "@/lib/data-processor"
+import type { DailySpending } from "@/lib/types/daily-spending"
 
 export default function SpendingTracker() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -25,6 +29,7 @@ export default function SpendingTracker() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const hasData = transactions.length > 0
 
@@ -132,6 +137,7 @@ export default function SpendingTracker() {
       searchText: "",
     })
     setSelectedCategory("")
+    setSelectedDate(null)
 
     // Clear localStorage
     localStorage.removeItem("spending-tracker-data")
@@ -171,6 +177,22 @@ export default function SpendingTracker() {
         ...prev,
         categories: [],
       }))
+    }
+  }
+
+  const handleCalendarDayClick = (date: string, spending: DailySpending | null) => {
+    setSelectedDate(date)
+    if (spending) {
+      // Use local midday to avoid UTC parsing shifting the date, then include the full day range
+      const localMidday = new Date(`${date}T12:00:00`)
+      setFilter((prev) => ({
+        ...prev,
+        dateRange: {
+          start: startOfDay(localMidday),
+          end: endOfDay(localMidday),
+        },
+      }))
+      // Don't clear category filter - filters should be independent
     }
   }
 
@@ -277,6 +299,21 @@ export default function SpendingTracker() {
         {/* KPI Cards */}
         <div className="mb-8">
           <KPIDisplay kpi={kpi} />
+        </div>
+
+        {/* Spending Calendar */}
+        <div className="mb-8">
+          <CalendarErrorBoundary>
+            <div className="bg-card rounded-lg border border-border p-6">
+              <h2 className="text-xl font-semibold mb-4">Spending Calendar</h2>
+              <SpendingCalendar
+                transactions={transactions}
+                onDayClick={handleCalendarDayClick}
+                loading={isLoading}
+                className="w-full"
+              />
+            </div>
+          </CalendarErrorBoundary>
         </div>
 
         {/* Chart and Table */}

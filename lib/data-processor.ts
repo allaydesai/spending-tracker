@@ -129,7 +129,11 @@ export class DataProcessorService {
       for (const name of possibleNames) {
         const index = headers.findIndex((h) => h.includes(name))
         if (index !== -1 && values[index]) {
-          return values[index].replace(/"/g, "").trim()
+          // Clean special characters and trim
+          return values[index]
+            .replace(/"/g, "")
+            .replace(/[^\x20-\x7E]/g, "") // Remove non-ASCII characters
+            .trim()
         }
       }
       return ""
@@ -143,6 +147,7 @@ export class DataProcessorService {
     const amountStr = getColumnValue(["amount", "transaction amount"])
     const debitStr = getColumnValue(["debit"])
     const creditStr = getColumnValue(["credit"])
+    const typeStr = getColumnValue(["type", "transaction type"]) // For new format with Type column
 
     if (!dateStr || (!amountStr && !debitStr && !creditStr) || !description) {
       console.warn(`Row ${rowIndex + 1}: Missing required fields (date, amount/debit/credit, description)`)
@@ -152,18 +157,70 @@ export class DataProcessorService {
     // Parse date
     let date: Date
     try {
-      // Handle various date formats
-      const parsedDate = new Date(dateStr)
-      if (isNaN(parsedDate.getTime())) {
-        // Try MM/DD/YYYY format
-        const parts = dateStr.split("/")
-        if (parts.length === 3) {
-          date = new Date(Number.parseInt(parts[2]), Number.parseInt(parts[0]) - 1, Number.parseInt(parts[1]))
+      // Clean date string first
+      const cleanDateStr = dateStr.replace(/[^\x20-\x7E]/g, "").trim()
+
+      // Try different date formats
+      // Format: YYYY-MM-DD (ISO format - new CSV format)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDateStr)) {
+        const parts = cleanDateStr.split("-")
+        date = new Date(Number.parseInt(parts[0]), Number.parseInt(parts[1]) - 1, Number.parseInt(parts[2]))
+      }
+      // Format: DD-MMM-YY (e.g., "14-Sep-25")
+      else if (/^\d{1,2}-[A-Za-z]{3}-\d{2}$/.test(cleanDateStr)) {
+        const parts = cleanDateStr.split("-")
+        const day = Number.parseInt(parts[0])
+        const monthStr = parts[1]
+        const year = 2000 + Number.parseInt(parts[2]) // Assuming 20XX for YY format
+
+        const monthMap: { [key: string]: number } = {
+          jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+          jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+        }
+        const month = monthMap[monthStr.toLowerCase()]
+
+        if (month !== undefined) {
+          date = new Date(year, month, day)
         } else {
+          throw new Error("Invalid month abbreviation")
+        }
+      }
+      // Format: DD MMM YY (e.g., "12 Sep 25")
+      else if (/^\d{1,2}\s+[A-Za-z]{3}\s+\d{2}$/.test(cleanDateStr)) {
+        const parts = cleanDateStr.split(/\s+/)
+        const day = Number.parseInt(parts[0])
+        const monthStr = parts[1]
+        const year = 2000 + Number.parseInt(parts[2])
+
+        const monthMap: { [key: string]: number } = {
+          jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+          jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+        }
+        const month = monthMap[monthStr.toLowerCase()]
+
+        if (month !== undefined) {
+          date = new Date(year, month, day)
+        } else {
+          throw new Error("Invalid month abbreviation")
+        }
+      }
+      // Format: MM/DD/YYYY
+      else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cleanDateStr)) {
+        const parts = cleanDateStr.split("/")
+        date = new Date(Number.parseInt(parts[2]), Number.parseInt(parts[0]) - 1, Number.parseInt(parts[1]))
+      }
+      // Try standard Date parsing as fallback
+      else {
+        const parsedDate = new Date(cleanDateStr)
+        if (isNaN(parsedDate.getTime())) {
           throw new Error("Invalid date format")
         }
-      } else {
         date = parsedDate
+      }
+
+      // Validate the parsed date
+      if (isNaN(date.getTime())) {
+        throw new Error("Invalid parsed date")
       }
     } catch (error) {
       console.warn(`Row ${rowIndex + 1}: Invalid date format: ${dateStr}`)
@@ -174,26 +231,49 @@ export class DataProcessorService {
     let amount: number
     try {
       if (amountStr) {
-        // Single amount column
+        // Single amount column (new format)
         const cleanAmount = amountStr.replace(/[$,\s]/g, "")
         amount = Number.parseFloat(cleanAmount)
         if (isNaN(amount)) {
           throw new Error("Invalid amount")
         }
+
+        // In the new format, negative values are debits (expenses), positive are credits (income)
+        // We need to flip this for our internal representation:
+        // - Positive for spending (debits)
+        // - Negative for income (credits)
+        if (typeStr && typeStr.toLowerCase() === "credit") {
+          // Credits are income, keep as negative internally
+          amount = -Math.abs(amount)
+        } else if (typeStr && typeStr.toLowerCase() === "debit") {
+          // Debits are expenses, keep as positive internally
+          amount = Math.abs(amount)
+        } else {
+          // If no type column, use the sign from the amount column
+          // Negative in CSV = expense, should be positive internally
+          // Positive in CSV = income, should be negative internally
+          amount = -amount
+        }
       } else {
-        // Separate debit/credit columns
+        // Separate debit/credit columns (old format)
         let parsedAmount = 0
 
         if (debitStr && debitStr.trim() !== "") {
-          // Debit amounts should be negative (expenses)
+          // Debit amounts should be positive for expenses (we'll treat them as positive spending)
           const cleanDebit = debitStr.replace(/[$,\s]/g, "")
-          parsedAmount = -Math.abs(Number.parseFloat(cleanDebit))
+          const debitValue = Number.parseFloat(cleanDebit)
+          if (!isNaN(debitValue) && debitValue > 0) {
+            parsedAmount = debitValue // Keep as positive for spending
+          }
         }
 
         if (creditStr && creditStr.trim() !== "") {
-          // Credit amounts should be positive (income)
+          // Credit amounts are income - use negative to distinguish from spending
           const cleanCredit = creditStr.replace(/[$,\s]/g, "")
-          parsedAmount = Math.abs(Number.parseFloat(cleanCredit))
+          const creditValue = Number.parseFloat(cleanCredit)
+          if (!isNaN(creditValue) && creditValue > 0) {
+            parsedAmount = -creditValue // Negative for income
+          }
         }
 
         if (isNaN(parsedAmount) || parsedAmount === 0) {
@@ -208,9 +288,11 @@ export class DataProcessorService {
     }
 
     // Optional fields
-    const category = getColumnValue(["category", "type", "transaction type"]) || "Uncategorized"
+    const category = getColumnValue(["category"]) || "Uncategorized"
     const merchant = getColumnValue(["merchant", "payee", "vendor", "store"]) || "Unknown"
     const account = getColumnValue(["account", "account name", "account number"]) || undefined
+    const location = getColumnValue(["location", "city"]) || ""
+    const notes = getColumnValue(["notes", "memo", "comments"]) || ""
 
     // Detect transfers
     const isTransfer =
@@ -231,11 +313,11 @@ export class DataProcessorService {
   }
 
   static calculateKPI(transactions: Transaction[]): KPI {
-    const income = transactions.filter((t) => t.amount > 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0)
-
-    const spending = Math.abs(
-      transactions.filter((t) => t.amount < 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0),
+    const income = Math.abs(
+      transactions.filter((t) => t.amount < 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0)
     )
+
+    const spending = transactions.filter((t) => t.amount > 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0)
 
     const netAmount = income - spending
 
@@ -268,7 +350,7 @@ export class DataProcessorService {
       if (transaction.isTransfer) return // Exclude transfers
 
       const category = transaction.category
-      const isIncome = transaction.amount > 0
+      const isIncome = transaction.amount < 0 // Negative amounts are income in our internal representation
       const existing = categoryMap.get(category) || { amount: 0, count: 0, isIncome }
 
       categoryMap.set(category, {

@@ -46,14 +46,14 @@ export function KPIDisplay({ kpi }: KPIDisplayProps) {
   }
 
   const getNetAmountColor = (amount: number) => {
-    if (amount > 0) return "text-success"
-    if (amount < 0) return "text-destructive"
-    return "text-muted-foreground"
+    if (amount > 0) return {color: 'var(--color-success)'}
+    if (amount < 0) return {color: 'var(--destructive)'}
+    return {}
   }
 
   const getNetAmountIcon = (amount: number) => {
-    if (amount > 0) return <TrendingUp className="w-5 h-5 text-success" />
-    if (amount < 0) return <TrendingDown className="w-5 h-5 text-destructive" />
+    if (amount > 0) return <TrendingUp className="w-5 h-5" style={{color: 'var(--color-success)'}} />
+    if (amount < 0) return <TrendingDown className="w-5 h-5" style={{color: 'var(--destructive)'}} />
     return <DollarSign className="w-5 h-5 text-muted-foreground" />
   }
 
@@ -64,11 +64,11 @@ export function KPIDisplay({ kpi }: KPIDisplayProps) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
-            <TrendingUp className="w-5 h-5 text-success" />
+            <TrendingUp className="w-5 h-5" style={{color: 'var(--color-success)'}} />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-success">{formatCurrency(kpi.totalIncome)}</div>
+          <div className="text-2xl font-bold" style={{color: 'var(--color-success)'}}>{formatCurrency(kpi.totalIncome)}</div>
           <p className="text-xs text-muted-foreground mt-1">{kpi.period}</p>
         </CardContent>
       </Card>
@@ -78,11 +78,11 @@ export function KPIDisplay({ kpi }: KPIDisplayProps) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Spending</CardTitle>
-            <TrendingDown className="w-5 h-5 text-destructive" />
+            <TrendingDown className="w-5 h-5" style={{color: 'var(--destructive)'}} />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-destructive">{formatCurrency(kpi.totalSpending)}</div>
+          <div className="text-2xl font-bold" style={{color: 'var(--destructive)'}}>{formatCurrency(kpi.totalSpending)}</div>
           <p className="text-xs text-muted-foreground mt-1">{kpi.period}</p>
         </CardContent>
       </Card>
@@ -96,7 +96,7 @@ export function KPIDisplay({ kpi }: KPIDisplayProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${getNetAmountColor(kpi.netAmount)}`}>
+          <div className="text-2xl font-bold" style={getNetAmountColor(kpi.netAmount)}>
             {kpi.netAmount >= 0 ? "+" : "-"}
             {formatCurrency(kpi.netAmount)}
           </div>
