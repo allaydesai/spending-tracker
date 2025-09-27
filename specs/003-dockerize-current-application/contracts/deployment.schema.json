@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Deployment Configuration Contract",
+  "description": "Contract for deployment configuration and validation",
+  "type": "object",
+  "properties": {
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "target_os": {
+          "type": "string",
+          "const": "ubuntu"
+        },
+        "docker_version": {
+          "type": "string",
+          "pattern": "^(20|24)\\."
+        },
+        "network": {
+          "type": "object",
+          "properties": {
+            "host_port": {
+              "type": "integer",
+              "minimum": 3000,
+              "maximum": 65535
+            },
+            "container_port": {
+              "type": "integer",
+              "const": 3000
+            },
+            "access_type": {
+              "type": "string",
+              "const": "local_network"
+            }
+          },
+          "required": ["host_port", "container_port", "access_type"]
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "host_path": {
+              "type": "string",
+              "pattern": "^/[^\\s]*$"
+            },
+            "container_path": {
+              "type": "string",
+              "const": "/app/uploads"
+            },
+            "permissions": {
+              "type": "string",
+              "const": "755"
+            }
+          },
+          "required": ["host_path", "container_path", "permissions"]
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "memory_limit": {
+              "type": "string",
+              "const": "512m"
+            },
+            "cpu_limit": {
+              "type": "string",
+              "const": "1.0"
+            }
+          },
+          "required": ["memory_limit", "cpu_limit"]
+        }
+      },
+      "required": ["target_os", "docker_version", "network", "storage", "resources"]
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "health_check_url": {
+          "type": "string",
+          "pattern": "^http://[^:]+:\\d+/api/health$"
+        },
+        "csv_upload_test": {
+          "type": "boolean",
+          "const": true
+        },
+        "chart_rendering_test": {
+          "type": "boolean",
+          "const": true
+        },
+        "persistence_test": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": ["health_check_url", "csv_upload_test", "chart_rendering_test", "persistence_test"]
+    }
+  },
+  "required": ["deployment", "validation"]
+}

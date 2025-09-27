@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Docker Compose Contract",
+  "description": "Contract defining the structure for docker-compose.yml",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "3.8"
+    },
+    "services": {
+      "type": "object",
+      "properties": {
+        "spending-tracker": {
+          "type": "object",
+          "properties": {
+            "build": {
+              "type": "object",
+              "properties": {
+                "context": {
+                  "type": "string",
+                  "const": "."
+                },
+                "dockerfile": {
+                  "type": "string",
+                  "const": "Dockerfile"
+                }
+              },
+              "required": ["context", "dockerfile"]
+            },
+            "ports": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\d+:3000$"
+              },
+              "minItems": 1,
+              "maxItems": 1
+            },
+            "volumes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[^:]+:/app/uploads$"
+              },
+              "minItems": 1,
+              "maxItems": 1
+            },
+            "environment": {
+              "type": "object",
+              "properties": {
+                "NODE_ENV": {
+                  "type": "string",
+                  "const": "production"
+                },
+                "PORT": {
+                  "type": "string",
+                  "const": "3000"
+                }
+              },
+              "required": ["NODE_ENV", "PORT"]
+            },
+            "restart": {
+              "type": "string",
+              "const": "unless-stopped"
+            },
+            "healthcheck": {
+              "type": "object",
+              "properties": {
+                "test": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "interval": {
+                  "type": "string"
+                },
+                "timeout": {
+                  "type": "string"
+                },
+                "retries": {
+                  "type": "integer"
+                }
+              },
+              "required": ["test", "interval", "timeout", "retries"]
+            }
+          },
+          "required": ["build", "ports", "volumes", "environment", "restart", "healthcheck"]
+        }
+      },
+      "required": ["spending-tracker"]
+    }
+  },
+  "required": ["version", "services"]
+}
