@@ -8,45 +8,45 @@
 - All file paths are absolute from repository root
 
 ## Phase 3.1: Infrastructure Setup
-- [ ] T001 Create Docker infrastructure directory structure (`docker/`, `scripts/`, `docs/`)
-- [ ] T002 Configure Next.js for production containerization in `next.config.mjs`
-- [ ] T003 [P] Add simple health check endpoint at `/app/api/health/route.ts`
+- [x] T001 Create Docker infrastructure directory structure (`docker/`, `scripts/`, `docs/`)
+- [x] T002 Configure Next.js for production containerization in `next.config.mjs`
+- [x] T003 [P] Add simple health check endpoint at `/app/api/health/route.ts`
 
 ## Phase 3.2: Docker Configuration Validation ⚠️ INFRASTRUCTURE TESTING
 **Focus: Validate Docker configurations work before deployment**
-- [ ] T004 [P] Create Dockerfile validation script in `scripts/validate-dockerfile.sh`
-- [ ] T005 [P] Create docker-compose validation script in `scripts/validate-compose.sh`
-- [ ] T006 [P] Create deployment environment validation in `scripts/validate-environment.sh`
-- [ ] T007 Create Docker build test script in `scripts/test-build.sh`
-- [ ] T008 Create container functionality test script in `scripts/test-container.sh`
+- [x] T004 [P] Create Dockerfile validation script in `scripts/validate-dockerfile.sh`
+- [x] T005 [P] Create docker-compose validation script in `scripts/validate-compose.sh`
+- [x] T006 [P] Create deployment environment validation in `scripts/validate-environment.sh`
+- [x] T007 Create Docker build test script in `scripts/test-build.sh`
+- [x] T008 Create container functionality test script in `scripts/test-container.sh`
 
 ## Phase 3.3: Docker Infrastructure Implementation
-- [ ] T009 Create production Dockerfile with multi-stage build at repository root
-- [ ] T010 Create docker-compose.yml for home server deployment at repository root
-- [ ] T011 Create .dockerignore file at repository root
-- [ ] T012 Implement health check API route at `/app/api/health/route.ts`
-- [ ] T013 [P] Create Docker build automation script in `scripts/build.sh`
-- [ ] T014 [P] Create image export script for server transfer in `scripts/export-image.sh`
-- [ ] T015 [P] Create server deployment script in `scripts/deploy-to-server.sh`
+- [x] T009 Create production Dockerfile with multi-stage build at repository root
+- [x] T010 Create docker-compose.yml for home server deployment at repository root
+- [x] T011 Create .dockerignore file at repository root
+- [x] T012 Implement health check API route at `/app/api/health/route.ts`
+- [x] T013 [P] Create Docker build automation script in `scripts/build.sh`
+- [x] T014 [P] Create image export script for server transfer in `scripts/export-image.sh`
+- [x] T015 [P] Create server deployment script in `scripts/deploy-to-server.sh`
 
 ## Phase 3.4: Deployment Automation
-- [ ] T016 Create environment configuration template in `docker/env.template`
-- [ ] T017 Configure volume mounting for CSV persistence in docker-compose
-- [ ] T018 Set up port mapping and network configuration
-- [ ] T019 Add resource limits and security policies to containers
-- [ ] T020 Configure container restart and recovery policies
-- [ ] T021 [P] Create server setup script in `scripts/setup-server.sh`
+- [x] T016 Create environment configuration template in `docker/env.template`
+- [x] T017 Configure volume mounting for CSV persistence in docker-compose
+- [x] T018 Set up port mapping and network configuration
+- [x] T019 Add resource limits and security policies to containers
+- [x] T020 Configure container restart and recovery policies
+- [x] T021 [P] Create server setup script in `scripts/setup-server.sh`
 
 ## Phase 3.5: Documentation & Operations
-- [ ] T022 [P] Create step-by-step deployment guide in `docs/DEPLOYMENT.md`
-- [ ] T023 [P] Create troubleshooting guide in `docs/TROUBLESHOOTING.md`
-- [ ] T024 [P] Create server maintenance guide in `docs/MAINTENANCE.md`
-- [ ] T025 [P] Create backup automation script in `scripts/backup-data.sh`
-- [ ] T026 [P] Create restore procedure script in `scripts/restore-data.sh`
-- [ ] T027 [P] Create monitoring and health check scripts in `scripts/monitor.sh`
-- [ ] T028 [P] Validate complete deployment workflow end-to-end
-- [ ] T029 Create container update and migration procedures
-- [ ] T030 Final infrastructure validation and cleanup
+- [x] T022 [P] Create step-by-step deployment guide in `docs/DEPLOYMENT.md`
+- [x] T023 [P] Create troubleshooting guide in `docs/TROUBLESHOOTING.md`
+- [x] T024 [P] Create server maintenance guide in `docs/MAINTENANCE.md`
+- [x] T025 [P] Create backup automation script in `scripts/backup-data.sh`
+- [x] T026 [P] Create restore procedure script in `scripts/restore-data.sh`
+- [x] T027 [P] Create monitoring and health check scripts in `scripts/monitor.sh`
+- [x] T028 [P] Validate complete deployment workflow end-to-end
+- [x] T029 Create container update and migration procedures
+- [x] T030 Final infrastructure validation and cleanup
 
 ## Dependencies
 - Infrastructure setup (T001-T003) before validation (T004-T008)
