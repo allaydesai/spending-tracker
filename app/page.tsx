@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { startOfDay, endOfDay } from "date-fns"
+import Link from "next/link"
 import { FileUpload } from "@/components/file-upload"
 import { KPIDisplay } from "@/components/kpi-display"
 import { CategoryChart } from "@/components/category-chart"
@@ -11,8 +12,12 @@ import { SpendingCalendar } from "@/components/calendar/spending-calendar"
 import { CalendarErrorBoundary } from "@/components/calendar/calendar-error-boundary"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Trash2, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Download, Trash2, AlertCircle, Upload, Database, FileText } from "lucide-react"
 import { DataProcessorService } from "@/lib/data-processor"
+import { dataService, type DataSource } from "@/lib/services/data-service"
 import type { Transaction, KPI, CategorySummary, Filter } from "@/lib/data-processor"
 import type { DailySpending } from "@/lib/types/daily-spending"
 
@@ -30,24 +35,42 @@ export default function SpendingTracker() {
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  // Load saved data source preference, default to database for new users
+  const [dataSource, setDataSource] = useState<DataSource>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('spending-tracker-data-source')
+      return (saved as DataSource) || 'database'
+    }
+    return 'database'
+  })
+  const [storageStatus, setStorageStatus] = useState<any>(null)
 
   const hasData = transactions.length > 0
 
-  // Load data from localStorage on mount
+  // Load data and initialize data source
   useEffect(() => {
-    const savedData = localStorage.getItem("spending-tracker-data")
-    const savedFilter = localStorage.getItem("spending-tracker-filters")
+    const loadData = async () => {
+      setIsLoading(true)
+      setError(null)
 
-    if (savedData) {
       try {
-        const parsed = JSON.parse(savedData)
-        // Support both { transactions: [] } shape and legacy [] shape
-        const rawTransactions = Array.isArray(parsed) ? parsed : parsed.transactions
-        if (rawTransactions && Array.isArray(rawTransactions)) {
-          const transactionsWithDates = rawTransactions.map((t: any) => ({
+        // Set data source and load transactions
+        dataService.setDataSource(dataSource)
+
+        // Get storage status
+        const status = await dataService.getStorageStatus()
+        setStorageStatus(status)
+
+        // Load transactions
+        const result = await dataService.getTransactions({ limit: 1000 })
+
+        if (result.transactions.length > 0) {
+          // Convert API format to internal format
+          const transactionsWithDates = result.transactions.map((t: any) => ({
             ...t,
             date: new Date(t.date),
           }))
+
           setTransactions(transactionsWithDates)
 
           // Recalculate derived data
@@ -56,26 +79,33 @@ export default function SpendingTracker() {
           setKpi(kpiData)
           setCategoryData(categoryData)
         }
+
+        // Load saved filters
+        const savedFilter = localStorage.getItem("spending-tracker-filters")
+        if (savedFilter) {
+          try {
+            const parsed = JSON.parse(savedFilter)
+            if (parsed.dateRange) {
+              parsed.dateRange = {
+                start: new Date(parsed.dateRange.start),
+                end: new Date(parsed.dateRange.end),
+              }
+            }
+            setFilter(parsed)
+          } catch (error) {
+            console.error("Failed to load saved filter:", error)
+          }
+        }
       } catch (error) {
-        console.error("Failed to load saved data:", error)
+        console.error("Failed to load data:", error)
+        setError(error instanceof Error ? error.message : "Failed to load data")
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    if (savedFilter) {
-      try {
-        const parsed = JSON.parse(savedFilter)
-        if (parsed.dateRange) {
-          parsed.dateRange = {
-            start: new Date(parsed.dateRange.start),
-            end: new Date(parsed.dateRange.end),
-          }
-        }
-        setFilter(parsed)
-      } catch (error) {
-        console.error("Failed to load saved filter:", error)
-      }
-    }
-  }, [])
+    loadData()
+  }, [dataSource])
 
   // Apply filters whenever filter or transactions change
   useEffect(() => {
@@ -196,77 +226,126 @@ export default function SpendingTracker() {
     }
   }
 
+  const handleDataSourceChange = (newDataSource: DataSource) => {
+    if (newDataSource !== dataSource) {
+      setDataSource(newDataSource)
+      // Save preference to localStorage
+      localStorage.setItem('spending-tracker-data-source', newDataSource)
+      // Don't reset state immediately - let useEffect handle data loading
+    }
+  }
+
   const availableCategories = DataProcessorService.getUniqueCategories(transactions)
   const availableMerchants = DataProcessorService.getUniqueMerchants(transactions)
 
-  if (!hasData) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold mb-4 text-balance">Spending Tracker</h1>
-              <p className="text-xl text-muted-foreground text-pretty">
-                Upload your CSV or Excel file to analyze your spending patterns and track your financial health.
-              </p>
-            </div>
+  // Empty state component that shows dashboard UI with appropriate message
+  const EmptyStateContent = () => (
+    <>
+      {/* Filter Controls - keep them visible for consistency */}
+      <div className="mb-8">
+        <FilterControls
+          filter={filter}
+          onFilterChange={setFilter}
+          availableCategories={[]}
+          availableMerchants={[]}
+        />
+      </div>
 
-            {/* Upload Section */}
-            <div className="mb-12">
-              <FileUpload onFileUpload={handleFileUpload} isLoading={isLoading} error={error} />
-            </div>
-
-            {/* Feature Preview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-card rounded-lg border border-border p-6">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <div className="w-6 h-6 bg-primary rounded"></div>
+      {/* Empty State Message */}
+      <div className="text-center py-16">
+        <div className="max-w-md mx-auto">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            {dataSource === 'database' ? (
+              <Database className="w-8 h-8 text-muted-foreground" />
+            ) : (
+              <FileText className="w-8 h-8 text-muted-foreground" />
+            )}
+          </div>
+          <h3 className="text-xl font-semibold mb-2">
+            {dataSource === 'database' ? 'No transactions in database' : 'No data uploaded'}
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            {dataSource === 'database'
+              ? 'Import your CSV file to start tracking your spending in the database.'
+              : 'Upload your CSV or Excel file to analyze your spending patterns.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/import">
+              <Button size="lg" className="gap-2">
+                <Upload className="w-5 h-5" />
+                Import CSV
+              </Button>
+            </Link>
+            {dataSource === 'file' && (
+              <>
+                <span className="text-sm text-muted-foreground self-center">or</span>
+                <div className="max-w-sm">
+                  <FileUpload onFileUpload={handleFileUpload} isLoading={isLoading} error={error} />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Instant Analysis</h3>
-                <p className="text-muted-foreground text-sm">
-                  Get immediate insights into your spending patterns, income, and net worth.
-                </p>
-              </div>
-
-              <div className="bg-card rounded-lg border border-border p-6">
-                <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mb-4">
-                  <div className="w-6 h-6 bg-success rounded-full"></div>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Category Breakdown</h3>
-                <p className="text-muted-foreground text-sm">
-                  Visualize your spending by category with interactive charts and detailed breakdowns.
-                </p>
-              </div>
-
-              <div className="bg-card rounded-lg border border-border p-6">
-                <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center mb-4">
-                  <div className="w-6 h-6 bg-warning rounded-sm"></div>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Smart Filtering</h3>
-                <p className="text-muted-foreground text-sm">
-                  Find specific transactions quickly with powerful search and filtering tools.
-                </p>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
-    )
-  }
+    </>
+  )
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-8 gap-4">
+          <div className="flex-1">
             <h1 className="text-3xl font-bold mb-2">Spending Tracker</h1>
-            <p className="text-muted-foreground">
-              {kpi?.transactionCount} transactions • {kpi?.period}
-            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>
+                {kpi?.transactionCount} transactions • {kpi?.period}
+              </span>
+              {storageStatus && (
+                <Badge variant={storageStatus.connected ? "default" : "secondary"} className="text-xs">
+                  <Database className="w-3 h-3 mr-1" />
+                  {dataSource === 'database' ? 'Database' : 'File Storage'}
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3 mt-4 sm:mt-0">
+
+          {/* Data Source Selector */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="data-source" className="text-sm font-medium">
+                Data Source:
+              </label>
+              <Select value={dataSource} onValueChange={handleDataSourceChange}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="file">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      File
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="database">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4" />
+                      Database
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <Link href="/import">
+              <Button className="gap-2">
+                <Upload className="w-4 h-4" />
+                Import CSV
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleExport} className="gap-2 bg-transparent">
               <Download className="w-4 h-4" />
               Export
@@ -286,49 +365,81 @@ export default function SpendingTracker() {
           </Alert>
         )}
 
-        {/* Filter Controls */}
-        <div className="mb-8">
-          <FilterControls
-            filter={filter}
-            onFilterChange={setFilter}
-            availableCategories={availableCategories}
-            availableMerchants={availableMerchants}
-          />
-        </div>
+        {/* Storage Status Card */}
+        {dataSource === 'database' && storageStatus && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${storageStatus.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div>
+                    <p className="text-sm font-medium">
+                      Database {storageStatus.connected ? 'Connected' : 'Disconnected'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {storageStatus.transactionCount.toLocaleString()} transactions •
+                      {Math.round(storageStatus.databaseSize / 1024)} KB
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  v{storageStatus.version}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* KPI Cards */}
-        <div className="mb-8">
-          <KPIDisplay kpi={kpi} />
-        </div>
-
-        {/* Spending Calendar */}
-        <div className="mb-8">
-          <CalendarErrorBoundary>
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h2 className="text-xl font-semibold mb-4">Spending Calendar</h2>
-              <SpendingCalendar
-                transactions={transactions}
-                onDayClick={handleCalendarDayClick}
-                loading={isLoading}
-                className="w-full"
+        {/* Main Content - either dashboard with data or empty state */}
+        {hasData ? (
+          <>
+            {/* Filter Controls */}
+            <div className="mb-8">
+              <FilterControls
+                filter={filter}
+                onFilterChange={setFilter}
+                availableCategories={availableCategories}
+                availableMerchants={availableMerchants}
               />
             </div>
-          </CalendarErrorBoundary>
-        </div>
 
-        {/* Chart and Table */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <CategoryChart
-              data={categoryData}
-              onCategoryFilter={handleCategoryFilter}
-              selectedCategory={selectedCategory}
-            />
-          </div>
-          <div className="lg:col-span-2">
-            <TransactionTable transactions={filteredTransactions} />
-          </div>
-        </div>
+            {/* KPI Cards */}
+            <div className="mb-8">
+              <KPIDisplay kpi={kpi} />
+            </div>
+
+            {/* Spending Calendar */}
+            <div className="mb-8">
+              <CalendarErrorBoundary>
+                <div className="bg-card rounded-lg border border-border p-6">
+                  <h2 className="text-xl font-semibold mb-4">Spending Calendar</h2>
+                  <SpendingCalendar
+                    transactions={transactions}
+                    onDayClick={handleCalendarDayClick}
+                    loading={isLoading}
+                    className="w-full"
+                  />
+                </div>
+              </CalendarErrorBoundary>
+            </div>
+
+            {/* Chart and Table */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <CategoryChart
+                  data={categoryData}
+                  onCategoryFilter={handleCategoryFilter}
+                  selectedCategory={selectedCategory}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <TransactionTable transactions={filteredTransactions} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <EmptyStateContent />
+        )}
       </div>
     </div>
   )

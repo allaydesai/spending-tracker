@@ -1,0 +1,354 @@
+openapi: 3.0.0
+info:
+  title: Spending Tracker Storage API
+  version: 1.0.0
+  description: API for persistent transaction storage and CSV import
+
+paths:
+  /api/transactions/import:
+    post:
+      summary: Import transactions from CSV file
+      description: Upload a CSV file to import transactions with duplicate detection
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file containing transactions
+                options:
+                  type: object
+                  properties:
+                    skipDuplicates:
+                      type: boolean
+                      default: true
+                      description: Skip duplicate transactions instead of failing
+                    validateOnly:
+                      type: boolean
+                      default: false
+                      description: Validate without importing
+      responses:
+        '200':
+          description: Import completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '400':
+          description: Invalid CSV format or data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '413':
+          description: File too large (>10MB)
+        '500':
+          description: Server error during import
+
+  /api/transactions:
+    get:
+      summary: List transactions
+      description: Retrieve stored transactions with optional filtering
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter transactions from this date (inclusive)
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter transactions until this date (inclusive)
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [date, amount, category]
+            default: date
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /api/transactions/stats:
+    get:
+      summary: Get transaction statistics
+      description: Retrieve aggregated statistics for dashboard visualization
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, category]
+            default: month
+      responses:
+        '200':
+          description: Transaction statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Statistics'
+
+  /api/transactions/{id}:
+    delete:
+      summary: Delete a transaction
+      description: Remove a specific transaction from storage
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Transaction deleted successfully
+        '404':
+          description: Transaction not found
+
+  /api/storage/status:
+    get:
+      summary: Get storage status
+      description: Check database status and statistics
+      responses:
+        '200':
+          description: Storage status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageStatus'
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      required:
+        - id
+        - date
+        - amount
+        - description
+        - createdAt
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+        category:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ImportResult:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/ImportSession'
+        imported:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        duplicates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DuplicateInfo'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportError'
+
+    ImportSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        filename:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        totalRows:
+          type: integer
+        importedCount:
+          type: integer
+        duplicateCount:
+          type: integer
+        errorCount:
+          type: integer
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        errorMessage:
+          type: string
+          nullable: true
+
+    DuplicateInfo:
+      type: object
+      properties:
+        row:
+          type: integer
+        date:
+          type: string
+          format: date
+        amount:
+          type: number
+        description:
+          type: string
+        existingId:
+          type: integer
+
+    ImportError:
+      type: object
+      properties:
+        row:
+          type: integer
+        field:
+          type: string
+          nullable: true
+        message:
+          type: string
+        data:
+          type: object
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    Statistics:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            income:
+              type: number
+            expenses:
+              type: number
+            count:
+              type: integer
+        byPeriod:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              income:
+                type: number
+              expenses:
+                type: number
+              count:
+                type: integer
+        byCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              amount:
+                type: number
+              count:
+                type: integer
+
+    StorageStatus:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        transactionCount:
+          type: integer
+        databaseSize:
+          type: integer
+          description: Size in bytes
+        lastImport:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: string

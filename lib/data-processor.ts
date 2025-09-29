@@ -238,41 +238,40 @@ export class DataProcessorService {
           throw new Error("Invalid amount")
         }
 
-        // In the new format, negative values are debits (expenses), positive are credits (income)
-        // We need to flip this for our internal representation:
-        // - Positive for spending (debits)
-        // - Negative for income (credits)
+        // Keep the original CSV sign convention:
+        // - Negative amounts are expenses (debits)
+        // - Positive amounts are income (credits)
         if (typeStr && typeStr.toLowerCase() === "credit") {
-          // Credits are income, keep as negative internally
-          amount = -Math.abs(amount)
-        } else if (typeStr && typeStr.toLowerCase() === "debit") {
-          // Debits are expenses, keep as positive internally
+          // Credits are income, keep as positive
           amount = Math.abs(amount)
+        } else if (typeStr && typeStr.toLowerCase() === "debit") {
+          // Debits are expenses, keep as negative
+          amount = -Math.abs(amount)
         } else {
-          // If no type column, use the sign from the amount column
-          // Negative in CSV = expense, should be positive internally
-          // Positive in CSV = income, should be negative internally
-          amount = -amount
+          // If no type column, use the sign from the amount column as-is
+          // Negative in CSV = expense (keep negative)
+          // Positive in CSV = income (keep positive)
+          // Don't flip the sign
         }
       } else {
         // Separate debit/credit columns (old format)
         let parsedAmount = 0
 
         if (debitStr && debitStr.trim() !== "") {
-          // Debit amounts should be positive for expenses (we'll treat them as positive spending)
+          // Debit amounts are expenses (keep as negative)
           const cleanDebit = debitStr.replace(/[$,\s]/g, "")
           const debitValue = Number.parseFloat(cleanDebit)
           if (!isNaN(debitValue) && debitValue > 0) {
-            parsedAmount = debitValue // Keep as positive for spending
+            parsedAmount = -debitValue // Negative for expenses
           }
         }
 
         if (creditStr && creditStr.trim() !== "") {
-          // Credit amounts are income - use negative to distinguish from spending
+          // Credit amounts are income (keep as positive)
           const cleanCredit = creditStr.replace(/[$,\s]/g, "")
           const creditValue = Number.parseFloat(cleanCredit)
           if (!isNaN(creditValue) && creditValue > 0) {
-            parsedAmount = -creditValue // Negative for income
+            parsedAmount = creditValue // Positive for income
           }
         }
 
@@ -313,11 +312,11 @@ export class DataProcessorService {
   }
 
   static calculateKPI(transactions: Transaction[]): KPI {
-    const income = Math.abs(
+    const income = transactions.filter((t) => t.amount > 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0)
+
+    const spending = Math.abs(
       transactions.filter((t) => t.amount < 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0)
     )
-
-    const spending = transactions.filter((t) => t.amount > 0 && !t.isTransfer).reduce((sum, t) => sum + t.amount, 0)
 
     const netAmount = income - spending
 
@@ -345,15 +344,20 @@ export class DataProcessorService {
   static calculateCategoryData(transactions: Transaction[]): CategorySummary[] {
     const categoryMap = new Map<string, { amount: number; count: number; isIncome: boolean }>()
 
-    // Group by category
+    // Group by category AND transaction type (income vs expense)
     transactions.forEach((transaction) => {
       if (transaction.isTransfer) return // Exclude transfers
 
       const category = transaction.category
-      const isIncome = transaction.amount < 0 // Negative amounts are income in our internal representation
-      const existing = categoryMap.get(category) || { amount: 0, count: 0, isIncome }
+      const isIncome = transaction.amount > 0 // Positive amounts are income
 
-      categoryMap.set(category, {
+      // Create separate entries for income vs expense categories
+      // This ensures income and expense transactions are grouped separately even with same category name
+      const categoryKey = isIncome ? `${category}` : category
+
+      const existing = categoryMap.get(categoryKey) || { amount: 0, count: 0, isIncome }
+
+      categoryMap.set(categoryKey, {
         amount: existing.amount + Math.abs(transaction.amount),
         count: existing.count + 1,
         isIncome,
