@@ -39,6 +39,10 @@ yarn-error.log*
 # Test files
 test-*.csv
 
+# Database files (runtime)
+data/spending.db
+data/spending.db-*
+
 # Temporary files
 *.tmp
 *.temp
