@@ -33,8 +33,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Create uploads directory with proper permissions
-RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
+# Create data and uploads directories with proper permissions
+RUN mkdir -p /app/data /app/uploads && chown -R nextjs:nodejs /app/data /app/uploads
 
 # Set environment variables
 ENV NODE_ENV=production

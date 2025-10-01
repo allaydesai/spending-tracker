@@ -42,3 +42,12 @@ test-*.csv
 # Temporary files
 *.tmp
 *.temp
+
+# Deployment artifacts
+deployment-package/
+*.tar.gz
+
+# Troubleshooting documents (temporary)
+DEBUG_COMMANDS.md
+DEPLOYMENT_FIX_INSTRUCTIONS.md
+SERVER_FIX.md
