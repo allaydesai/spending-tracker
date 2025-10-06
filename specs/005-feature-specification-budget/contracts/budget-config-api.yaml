@@ -1,0 +1,271 @@
+openapi: 3.1.0
+info:
+  title: Budget Config API
+  version: 1.0.0
+  description: API contract for loading and validating budget configuration from YAML file
+
+paths:
+  /api/budget/config:
+    get:
+      operationId: getBudgetConfig
+      summary: Load budget configuration
+      description: |
+        Loads budget configuration from YAML file, validates it with Zod schema,
+        and returns the parsed configuration. Supports caching with 5-minute TTL.
+
+        Requirements: FR-001 (load from YAML), FR-005 (validate), FR-006 (hot-reload)
+
+      parameters:
+        - name: bustCache
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Force reload from disk (bypass cache)
+
+      responses:
+        '200':
+          description: Budget configuration loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetConfigResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      budget:
+                        forecasted_income: 13437.98
+                        fixed_expenses:
+                          mortgage: 4581.34
+                          essential_services:
+                            wireless: 371.62
+                            insurance: 698.47
+                            utility: 300.00
+                          car_payment: 600.00
+                          additional_services:
+                            netflix: 20.99
+                            spotify: 10.99
+                          aaria_day_care: 484.00
+                        day_to_day_budget: 4000.00
+                        forecasted_interest: 1025.00
+                        interest_patterns:
+                          categories:
+                            - "Interest"
+                            - "Finance Charge"
+                          keywords:
+                            - "interest"
+                            - "apr"
+                    cached: true
+                    cacheAge: 120
+
+        '400':
+          description: YAML validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validation_error:
+                  value:
+                    success: false
+                    error: "Validation error"
+                    details:
+                      - path: ["budget", "forecasted_income"]
+                        message: "Income must be positive"
+                        received: -1000
+                      - path: ["budget", "fixed_expenses", "mortgage"]
+                        message: "Mortgage cannot be negative"
+                        received: -4581.34
+
+        '404':
+          description: YAML file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                file_not_found:
+                  value:
+                    success: false
+                    error: "Budget config file not found"
+                    path: "data/budget-config.yaml"
+                    hint: "Create budget-config.yaml in the data directory"
+
+        '500':
+          description: YAML parse error or server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                parse_error:
+                  value:
+                    success: false
+                    error: "Failed to parse YAML"
+                    details: "Unexpected token at line 15, column 3"
+                    yamlContent: "budget:\n  forecasted_income: not-a-number\n"
+
+components:
+  schemas:
+    BudgetConfigResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/BudgetConfig'
+        cached:
+          type: boolean
+          description: Whether this response came from cache
+        cacheAge:
+          type: integer
+          description: Age of cached data in seconds (only if cached=true)
+
+    BudgetConfig:
+      type: object
+      required:
+        - budget
+      properties:
+        budget:
+          type: object
+          required:
+            - forecasted_income
+            - fixed_expenses
+            - day_to_day_budget
+            - forecasted_interest
+            - interest_patterns
+          properties:
+            forecasted_income:
+              type: number
+              minimum: 0.01
+              description: Expected monthly income
+              example: 13437.98
+
+            fixed_expenses:
+              type: object
+              required:
+                - mortgage
+                - essential_services
+                - car_payment
+                - additional_services
+                - aaria_day_care
+              properties:
+                mortgage:
+                  type: number
+                  minimum: 0
+                  example: 4581.34
+
+                essential_services:
+                  type: object
+                  required:
+                    - wireless
+                    - insurance
+                    - utility
+                  properties:
+                    wireless:
+                      type: number
+                      minimum: 0
+                      example: 371.62
+                    insurance:
+                      type: number
+                      minimum: 0
+                      example: 698.47
+                    utility:
+                      type: number
+                      minimum: 0
+                      example: 300.00
+
+                car_payment:
+                  type: number
+                  minimum: 0
+                  example: 600.00
+
+                additional_services:
+                  type: object
+                  additionalProperties:
+                    type: number
+                    minimum: 0
+                  example:
+                    netflix: 20.99
+                    spotify: 10.99
+                    amazon_prime: 14.99
+
+                aaria_day_care:
+                  type: number
+                  minimum: 0
+                  example: 484.00
+
+            day_to_day_budget:
+              type: number
+              minimum: 0.01
+              description: Variable expense budget target
+              example: 4000.00
+
+            forecasted_interest:
+              type: number
+              minimum: 0
+              description: Expected interest on debt
+              example: 1025.00
+
+            interest_patterns:
+              type: object
+              required:
+                - categories
+                - keywords
+              properties:
+                categories:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  example: ["Interest", "Finance Charge"]
+                keywords:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  example: ["interest", "apr", "finance charge"]
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: string
+          description: Human-readable error message
+        details:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: array
+                    items:
+                      type: string
+                  message:
+                    type: string
+                  received:
+                    type: any
+        path:
+          type: string
+          description: File path (for file not found errors)
+        hint:
+          type: string
+          description: Suggestion for fixing the error
+        yamlContent:
+          type: string
+          description: Problematic YAML content (for parse errors)

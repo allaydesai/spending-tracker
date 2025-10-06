@@ -1,0 +1,369 @@
+openapi: 3.1.0
+info:
+  title: Budget Metrics API
+  version: 1.0.0
+  description: API contract for calculating budget metrics from config and transaction data
+
+paths:
+  /api/budget/metrics:
+    get:
+      operationId: getBudgetMetrics
+      summary: Calculate budget metrics
+      description: |
+        Calculates real-time budget metrics including:
+        - Fixed expense and subscription totals
+        - Actual income and spending month-to-date
+        - Budget remaining and savings
+        - Progress indicators and burn rate
+        - Interest tracking
+
+        Requirements: FR-007 to FR-033 (all budget calculations)
+
+      parameters:
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            pattern: '^\d{4}-\d{2}$'
+            example: '2025-10'
+          description: Target month in YYYY-MM format (defaults to current month)
+
+        - name: referenceDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: '2025-10-15'
+          description: Reference date for progress calculations (defaults to today)
+
+      responses:
+        '200':
+          description: Budget metrics calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetMetricsResponse'
+              examples:
+                mid_month:
+                  value:
+                    success: true
+                    data:
+                      metrics:
+                        totalFixedExpenses: 7588.94
+                        totalVariableSubscriptions: 553.51
+                        forecastedIncome: 13437.98
+                        forecastedSavings: 1849.04
+                        forecastedInterest: 1025.00
+                        actualIncomeMtd: 6800.00
+                        actualVariableSpendingMtd: 1850.00
+                        budgetRemaining: 2150.00
+                        actualSavingsMtd: 2361.06
+                        interestPaidMtd: 512.50
+                        dayToDayBudget: 4000.00
+                      progress:
+                        daysElapsed: 15
+                        totalDays: 31
+                        monthProgressPercent: 48.4
+                        budgetUsagePercent: 46.3
+                        budgetUsageAmount: 1850.00
+                        budgetTotalAmount: 4000.00
+                        actualBurnRate: 123.33
+                        targetBurnRate: 129.03
+                        burnRateVariance: -5.70
+                        burnRateVariancePercent: -4.4
+                        statusColor: "green"
+                        isOverBudget: false
+                      breakdown:
+                        fixedExpenses:
+                          total: 7588.94
+                          items:
+                            - label: "Mortgage"
+                              amount: 4581.34
+                            - label: "Essential Services"
+                              amount: 1370.09
+                              children:
+                                - label: "Wireless (Roger+Bell+ATT)"
+                                  amount: 371.62
+                                - label: "Insurance (Car+Home)"
+                                  amount: 698.47
+                                - label: "Utility (Hydro+Gas)"
+                                  amount: 300.00
+                            - label: "Car Payment"
+                              amount: 600.00
+                            - label: "Aaria Day Care"
+                              amount: 484.00
+                        variableSubscriptions:
+                          total: 553.51
+                          items:
+                            - label: "Netflix"
+                              amount: 20.99
+                            - label: "Spotify"
+                              amount: 10.99
+                    month: "2025-10"
+                    referenceDate: "2025-10-15"
+                    calculationTime: 12
+
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_month:
+                  value:
+                    success: false
+                    error: "Invalid month format"
+                    details: "Month must be in YYYY-MM format (e.g., 2025-10)"
+                    received: "2025-13"
+
+        '500':
+          description: Budget config missing or calculation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                config_missing:
+                  value:
+                    success: false
+                    error: "Failed to load budget configuration"
+                    details: "Budget config file not found"
+                    hint: "Create data/budget-config.yaml first"
+
+components:
+  schemas:
+    BudgetMetricsResponse:
+      type: object
+      required:
+        - success
+        - data
+        - month
+        - referenceDate
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - metrics
+            - progress
+            - breakdown
+          properties:
+            metrics:
+              $ref: '#/components/schemas/BudgetMetrics'
+            progress:
+              $ref: '#/components/schemas/ProgressIndicators'
+            breakdown:
+              $ref: '#/components/schemas/ExpenseBreakdown'
+        month:
+          type: string
+          description: Target month (YYYY-MM)
+          example: "2025-10"
+        referenceDate:
+          type: string
+          format: date
+          description: Reference date used for calculations
+          example: "2025-10-15"
+        calculationTime:
+          type: integer
+          description: Calculation time in milliseconds
+          example: 12
+
+    BudgetMetrics:
+      type: object
+      required:
+        - totalFixedExpenses
+        - totalVariableSubscriptions
+        - forecastedIncome
+        - forecastedSavings
+        - forecastedInterest
+        - actualIncomeMtd
+        - actualVariableSpendingMtd
+        - budgetRemaining
+        - actualSavingsMtd
+        - interestPaidMtd
+        - dayToDayBudget
+      properties:
+        totalFixedExpenses:
+          type: number
+          description: Sum of all fixed expenses (FR-007)
+          example: 7588.94
+        totalVariableSubscriptions:
+          type: number
+          description: Sum of additional_services (FR-008)
+          example: 553.51
+        forecastedIncome:
+          type: number
+          description: From config.forecasted_income
+          example: 13437.98
+        forecastedSavings:
+          type: number
+          description: Income - Fixed - Subscriptions - DayToDayBudget (FR-009)
+          example: 1849.04
+        forecastedInterest:
+          type: number
+          description: From config.forecasted_interest
+          example: 1025.00
+        actualIncomeMtd:
+          type: number
+          description: Sum of positive transactions (FR-010)
+          example: 6800.00
+        actualVariableSpendingMtd:
+          type: number
+          description: Sum of day-to-day expenses (FR-011)
+          example: 1850.00
+        budgetRemaining:
+          type: number
+          description: DayToDayBudget - ActualVariableSpending (FR-012), can be negative
+          example: 2150.00
+        actualSavingsMtd:
+          type: number
+          description: Income - Fixed - Subscriptions - ActualSpending (FR-013)
+          example: 2361.06
+        interestPaidMtd:
+          type: number
+          description: Sum of interest transactions (FR-014)
+          example: 512.50
+        dayToDayBudget:
+          type: number
+          description: From config.day_to_day_budget
+          example: 4000.00
+
+    ProgressIndicators:
+      type: object
+      required:
+        - daysElapsed
+        - totalDays
+        - monthProgressPercent
+        - budgetUsagePercent
+        - budgetUsageAmount
+        - budgetTotalAmount
+        - actualBurnRate
+        - targetBurnRate
+        - burnRateVariance
+        - burnRateVariancePercent
+        - statusColor
+        - isOverBudget
+      properties:
+        daysElapsed:
+          type: integer
+          description: Days completed in current month (FR-015)
+          example: 15
+        totalDays:
+          type: integer
+          description: Total days in current month (FR-015)
+          example: 31
+        monthProgressPercent:
+          type: number
+          description: Percentage of month completed (FR-015)
+          example: 48.4
+        budgetUsagePercent:
+          type: number
+          description: Percentage of budget used, can exceed 100 (FR-016)
+          example: 46.3
+        budgetUsageAmount:
+          type: number
+          description: Dollar amount used
+          example: 1850.00
+        budgetTotalAmount:
+          type: number
+          description: Total day-to-day budget
+          example: 4000.00
+        actualBurnRate:
+          type: number
+          description: Actual spending per day (FR-017)
+          example: 123.33
+        targetBurnRate:
+          type: number
+          description: Target spending per day (FR-018)
+          example: 129.03
+        burnRateVariance:
+          type: number
+          description: Difference between actual and target (FR-019)
+          example: -5.70
+        burnRateVariancePercent:
+          type: number
+          description: Percentage variance
+          example: -4.4
+        statusColor:
+          type: string
+          enum: [green, yellow, red]
+          description: Color coding based on progress (FR-021, FR-022)
+          example: "green"
+        isOverBudget:
+          type: boolean
+          description: True if budget remaining < 0 (FR-023)
+          example: false
+
+    ExpenseBreakdown:
+      type: object
+      required:
+        - fixedExpenses
+        - variableSubscriptions
+      properties:
+        fixedExpenses:
+          $ref: '#/components/schemas/ExpenseCategory'
+        variableSubscriptions:
+          $ref: '#/components/schemas/ExpenseCategory'
+
+    ExpenseCategory:
+      type: object
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: number
+          description: Sum of all items in this category
+          example: 7588.94
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseItem'
+
+    ExpenseItem:
+      type: object
+      required:
+        - label
+        - amount
+      properties:
+        label:
+          type: string
+          description: Display name for this expense
+          example: "Mortgage"
+        amount:
+          type: number
+          description: Dollar amount
+          example: 4581.34
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseItem'
+          description: Nested expense items (e.g., essential services breakdown)
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: string
+          description: Human-readable error message
+        details:
+          type: string
+          description: Additional error details
+        received:
+          type: string
+          description: Invalid value received
+        hint:
+          type: string
+          description: Suggestion for fixing the error

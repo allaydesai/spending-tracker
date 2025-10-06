@@ -1,0 +1,11 @@
+﻿Expense,Monthly,Annual,Cost CAD,Category,Platform,Currency,Pmt. Freq.
+Google One (100GB),2.11,25.32,37.98,Services,Paypal,USD,Monthly
+Youtube,22,264,264,Entertainment,Paypal,CAD,Monthly
+Microsoft,10.8325,129.99,194.985,Services,Paypal,USD,Annual
+att Mom,40.83,489.96,734.94,Services,Paypal,USD,Monthly
+Netflix,27.08,324.96,487.44,Entertainment,BOA Card,USD,Monthly
+icloud,2.99,35.88,53.82,services,Paypal,USD,Monthly
+BOA Fees,12,144,216,Financial,BOA Chk.,USD,Monthly
+Chase Fees,12,144,216,Financial,Chase Chk.,USD,Monthly
+Chase Marriot Credit,7.916666667,95,142.5,Financial,Marriot Card,USD,Annual
+AWS,0.8,9.6,14.4,Services,BOA Card,USD,Annual

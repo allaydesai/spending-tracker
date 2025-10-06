@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -45,6 +45,18 @@ export function FilterControls({
         }
       : undefined,
   )
+
+  // Sync local dateRange state when parent filter changes
+  useEffect(() => {
+    if (filter.dateRange) {
+      setDateRange({
+        from: filter.dateRange.start,
+        to: filter.dateRange.end,
+      })
+    } else {
+      setDateRange(undefined)
+    }
+  }, [filter.dateRange])
 
   const updateFilter = (updates: Partial<FilterType>) => {
     onFilterChange({ ...filter, ...updates })

@@ -10,6 +10,7 @@ import { TransactionTable } from "@/components/transaction-table"
 import { FilterControls } from "@/components/filter-controls"
 import { SpendingCalendar } from "@/components/calendar/spending-calendar"
 import { CalendarErrorBoundary } from "@/components/calendar/calendar-error-boundary"
+import { BudgetOverview } from "@/components/budget/BudgetOverview"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -111,6 +112,12 @@ export default function SpendingTracker() {
   useEffect(() => {
     const filtered = DataProcessorService.applyFilters(transactions, filter)
     setFilteredTransactions(filtered)
+
+    // Recalculate KPI and category data based on filtered transactions
+    const filteredKpi = DataProcessorService.calculateKPI(filtered)
+    const filteredCategoryData = DataProcessorService.calculateCategoryData(filtered)
+    setKpi(filteredKpi)
+    setCategoryData(filteredCategoryData)
 
     // Save filter to localStorage (align with existing backend key)
     localStorage.setItem("spending-tracker-filters", JSON.stringify(filter))
@@ -406,6 +413,11 @@ export default function SpendingTracker() {
             {/* KPI Cards */}
             <div className="mb-8">
               <KPIDisplay kpi={kpi} />
+            </div>
+
+            {/* Budget Overview */}
+            <div className="mb-8">
+              <BudgetOverview filter={filter} onFilterChange={setFilter} />
             </div>
 
             {/* Spending Calendar */}

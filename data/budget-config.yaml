@@ -1,0 +1,58 @@
+# Budget Configuration
+# This file defines your monthly budget parameters and expense breakdowns
+# Edit values as needed - changes will be reflected on next dashboard refresh
+
+budget:
+  # Monthly income forecast
+  forecasted_income: 13437.98
+
+  # Fixed monthly expenses (static costs)
+  fixed_expenses:
+    mortgage: 4581.34
+
+    # Essential services breakdown
+    essential_services:
+      wireless: 371.62    # Wireless (Roger+Bell+ATT)
+      insurance: 698.47   # Insurance (Car+Home)
+      utility: 300.00     # Utility (Hydro+Gas)
+
+    car_payment: 600.00
+
+    # Variable subscriptions (monthly recurring)
+    # NOTE: These values are scaled from additional-services.csv to match budget_summary.csv total of $553.51
+    additional_services:
+      google_one: 8.43           # Google One (100GB)
+      youtube: 87.96             # Youtube
+      microsoft: 43.30           # Microsoft 365
+      att_mom: 163.21            # ATT Mom
+      netflix: 108.27            # Netflix
+      icloud: 11.96              # iCloud Storage
+      boa_fees: 47.99            # BOA Account Fees
+      chase_fees: 47.99          # Chase Account Fees
+      chase_marriott: 31.20      # Chase Marriott Credit Annual Fee
+      aws: 3.20                  # AWS Services
+      # Total: $553.51 (matches budget_summary.csv)
+
+    aaria_day_care: 484.00
+
+  # Day-to-day variable expense budget
+  day_to_day_budget: 4000.00
+
+  # Forecasted monthly interest on debt
+  forecasted_interest: 1025.00
+
+  # Patterns for identifying interest transactions
+  interest_patterns:
+    # Transaction categories that indicate interest charges
+    categories:
+      - "Interest"
+      - "Interest & Charges"
+      - "Finance Charge"
+      - "Interest Charge"
+
+    # Keywords in transaction descriptions that indicate interest
+    keywords:
+      - "interest"
+      - "finance charge"
+      - "apr"
+      - "interest charge"
