@@ -38,7 +38,9 @@ fi
 
 # Build the image
 echo "📦 Building Docker image: $TAG"
+echo "🔧 Building for linux/amd64 platform (compatible with x86_64 servers)"
 docker build \
+    --platform linux/amd64 \
     --label "project=spending-tracker" \
     --label "version=$VERSION" \
     --label "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \

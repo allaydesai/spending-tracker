@@ -90,7 +90,9 @@ docker compose down 2>/dev/null || true
 
 echo "📁 Creating data directory..."
 sudo mkdir -p /opt/spending-tracker/data
-sudo chown $USER:$USER /opt/spending-tracker/data
+# Container runs as uid 1001 (nextjs user), so set permissions accordingly
+sudo chown -R 1001:1001 /opt/spending-tracker/data
+sudo chmod -R 755 /opt/spending-tracker/data
 
 echo "🚀 Starting Spending Tracker..."
 docker compose up -d
